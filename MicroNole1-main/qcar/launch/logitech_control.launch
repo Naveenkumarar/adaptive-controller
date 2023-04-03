@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<launch>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find qcar)/urdf/qcar_model.xacro'"/>
+
+  <!-- send fake joint values -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+  </node>
+
+
+  <!-- Combine joint values -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+    
+	<!--
+  <node name="command_node" pkg="qcar"	
+	  type="commandnode.py" output="screen">  
+  </node> 
+  
+  <node name="qcar_node" pkg="qcar"
+       type="qcarnode_gamepad_savedata.py" output="screen">      
+  </node>
+  -->
+
+  <node name="command_node" pkg="qcar"
+	 type="commandnode_ctrl.py" output="screen">
+	  <param name="joystick_event_no" type="int" value="5" />
+      <remap from="/ctrl_cmd" to="/ctrl_cmd_joy" />
+  </node>
+	
+	<node name="qcar_node" pkg="qcar"
+          type="micronole_io.py" output="screen">
+	</node>
+
+  <!-- <node name="lidar_node" pkg="qcar"
+          type="lidarnode.py" output="screen">      
+  </node> -->
+  <!-- Static transform for Quansers LIDAR node -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="baselink_lidar_broadcaster" args="-0.01227 -0.00045 0.16152 0 0 0 base lidar 100"/> -->
+
+	<include file="$(find rplidar_ros)/launch/rplidar.launch">
+		<remap from="points_raw" to="points_raw_rp" />
+	</include>
+  <!-- Static transform for RPLidar node -->
+  <!--<node pkg="tf" type="static_transform_publisher" name="baselink_laser_broadcaster" args="-0.01227 -0.00045 0.16152 -1.57 0 0 base laser 100"/>-->
+  <!--<node pkg="tf" type="static_transform_publisher" name="baselink_imu_broadcaster" args="-0.05 0 0.089 -3.14159 0 0 base imu_link 100"/>-->
+
+  <!--<node name="record" pkg="rosbag" type="record" args="-a -o $(find qcar)/bagfiles/micronole_io_rplidar_pc2_raw_fast"/>--> <!-- rplidar, lidarnode, imu scenarios -->
+	<!-- micronole_io_rplidar_hand_rotate means i picked up micronole and rotated it about roll (left, right), pitch (forward, backward), yaw(counterclockwise, clockwise) then dropped Micronole -->
+
+  <node pkg="qcar" type="HardwareWatchDog.py" name="watchdog"  output="screen"/>
+  <node pkg="qcar" type="imu_debug_node.py" name="imu_debug_node"  output="screen"/>
+
+	<!-- 
+  <node name="csi_node" pkg="qcar"
+          type="csinode.py" output="screen">      
+  </node>
+
+
+  <node name="rgbd_node" pkg="qcar"
+          type="rgbdnode.py" output="screen">
+  </node>
+  
+  -->
+  
+  <!--<node pkg="laser2pc" type="advanced" name="LaserScan2PointCloud2"/> -->
+  
+  <rosparam command="load" file="$(find qcar)/config/vehicle_info.yaml" />
+  <rosparam command="load" file="$(find qcar)/config/params.yaml" />
+
+
+</launch>

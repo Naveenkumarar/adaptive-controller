@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find qcar)/urdf/qcar_model.xacro'"/>
+
+  <!-- send fake joint values -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+  </node>
+
+
+  <!-- Combine joint values -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+
+
+  <node name="csi_lane_error_calculation_node" pkg="qcar"
+          type="csi_lane_error_node.py" cwd="node" output="screen">
+  </node>
+
+  <node name="lane_control_node" pkg="qcar"
+	  type="control_node.py" output="screen">
+  </node>
+</launch>

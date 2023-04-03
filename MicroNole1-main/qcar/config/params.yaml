@@ -1,0 +1,3 @@
+joystick_event_no: 1
+joystick_drift_tol: 0.002
+autonomous_mode: True

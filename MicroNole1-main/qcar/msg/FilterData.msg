@@ -1,0 +1,5 @@
+std_msgs/Header header
+float32 filtered_yaw_rate
+float32 filtered_counts_per_sec
+float32 filtered_longitudinal_velocity
+float32 filtered_lateral_velocity

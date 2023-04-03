@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+  
+  <!--- launch force feeback -->  
+  <include file="$(find g29_force_feedback)/launch/g29_feedback.launch">
+  </include>
+
+  <!--- launch racing simulator -->  
+  <include file="$(find racing_simulator)/launch/simulator.launch">
+  </include>
+  
+</launch>
