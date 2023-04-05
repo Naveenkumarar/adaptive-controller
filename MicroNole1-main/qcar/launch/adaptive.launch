@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!--<arg name="autonomous_mode" default="true"/>
+  -->
+
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find qcar)/urdf/qcar_model.xacro'"/>
+
+  <!-- send fake joint values -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+  </node>
+
+
+  <!-- Combine joint values -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+
+  <!-- Show in Rviz   -->
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find qcar)/config/sensors.rviz"/> -->
+  <!-- <node name="rviz" pkg="rviz" type="rviz"/> -->
+  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find mybot_description)/launch/myrobot.rviz"/-->
+      
+  <node name="qcar_node" pkg="qcar"
+          type="qcarnode_adaptive.py" output="screen">
+      
+  </node>
+
+  <node name="lidar_node" pkg="qcar"
+          type="lidarnode.py" output="screen">
+      
+  </node>
+  
+  <node pkg="qcar" type="RTSP_camera_streaming.sh" name="camerStreaming" output="screen"/>
+
+  
+  <node pkg="laser2pc" type="advanced" name="LaserScan2PointCloud2"/>
+
+  
+  <rosparam command="load" file="$(find qcar)/config/vehicle_info.yaml" />
+  <rosparam command="load" file="$(find qcar)/config/params.yaml" />
+  
+  
+  <!--<rosparam command="load" file="$(find qcar)/config/params.yaml" subst_value="True">$(arg autonomous_mode)</rosparam>
+-->
+</launch>
