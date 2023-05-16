@@ -24,6 +24,13 @@ import cv2
 import pickle
    
 import csv
+from std_msgs.msg       import Float64
+
+import evdev
+from evdev import ecodes, InputDevice
+device = evdev.list_devices()[0]
+
+
 
 class racingNode(object):
     """docstring for ClassName"""
@@ -38,7 +45,7 @@ class racingNode(object):
 
         self.ctrl_pub = rospy.Publisher('/racing_cockpit/ctrl_cmd', Vector3Stamped, queue_size=10)
         self.ctrl_sub = rospy.Subscriber("/G29/joy", Joy, self.ctrl_callback, queue_size=10)
-        self.adaptive_sub = rospy.Subscriber("/adaptive_response", Twist, self.adaptive_callback, queue_size=10)
+        self.adaptive_sub = rospy.Subscriber("/adaptive_response", Vector3Stamped, self.adaptive_callback, queue_size=10)
         self.delay = 0.0
         
         self.axes = np.zeros(6)
@@ -47,13 +54,13 @@ class racingNode(object):
         self.throttle_scale, self.steering_scale = 0.2/2, math.pi/2
 
         #passivity constant
-        self.k1 = 0.01
-        self.k2 = 0.01
-        self.k3 = 0.01
-        self.k4 = 0.01
-        self.velocity = 0
-        self.forcefeedback = 0
-        self.dat=[["Before Command","After Command","Velocity","FF","k1","K2","K3","K4"]]
+        self.b=8
+        self.velocity=0.0
+        self.force_feedback = 0.0
+        self.tval = 0.0
+
+        #force_feedback
+        self.evtdev = InputDevice(device)
 
     def publish_data(self):
         while not rospy.is_shutdown():
@@ -83,47 +90,38 @@ class racingNode(object):
                 self.command[2] = 1
             if self.gearshift_left_b==1 or self.gearshift_middle_b==1 or self.gearshift_right_b==1:
                 self.command[2] = -1
-            self.modify_input()
-            # self.publisher_joy()
-            
+            self.publisher_joy()
 
-    def modify_input(self):
-        bc,ac=self.command,self.command
-        # print("before modify:",self.command)
-        # print("K1 -------k2 -------K3 -------K4")
-        # print(self.k1,self.k2,self.k3,self.k4)
-        # print("velocity:",str(self.velocity))
-        # print("FF:",str(self.forcefeedback))
-        ac[0]=bc[0] - self.k1 * self.velocity - self.k2 * self.forcefeedback
-        ac[1]=bc[1] - self.k3 * self.velocity - self.k4 * self.forcefeedback
-        # print("after modify:",self.command)
-        
-        self.dat.append([bc,ac,self.velocity,self.forcefeedback,self.k1,self.k2,self.k3,self.k4])
-        # And then use the following to create the csv file:
-        with open('/data.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerows(self.dat)
-        self.command=ac
-        self.publisher_joy()
-        self.rate.sleep()
+            self.tval = 0.0
+            if self.command[2] > 0.5:
+                self.tval = self.command[1]
+            if self.command[2] < -0.5:
+                self.tval = -1.0 * self.command[1]
+
+            val =int(self.force_feedback * 32767)
+            self.evtdev.write(ecodes.EV_FF, ecodes.FF_AUTOCENTER, val)
 
     def ctrl_callback(self, data):
         self.axes = data.axes
         self.button = data.buttons
         
     def adaptive_callback(self,data):
-        self.k4 = data.angular.x
-        self.k2 = data.angular.y
-        self.velocity = data.linear.x
-        self.forcefeedback = data.linear.y
+        # self.velocity = (self.b * self.tval +  data.vector.x) /2
+        # self.force_feedback = (self.b * self.command[0] +  data.vector.y) /2
+        self.velocity = (self.tval +  data.vector.x) *(self.b/2)**0.5
+        self.force_feedback = (self.command[0] +  data.vector.y) *(self.b/2)**0.5
+
+        print("Velocity:",str(self.velocity),"----->FF",str(self.force_feedback))
 
     def publisher_joy(self):
+        self.command = (self.b/2)**0.5 * self.command
         joy_command = Vector3Stamped()
         joy_command.header.stamp = rospy.Time.now()
         joy_command.header.frame_id = 'remote racing'
         joy_command.vector.x = float(self.command[0])
         joy_command.vector.y = float(self.command[1])
         joy_command.vector.z = float(self.command[2])
+        time.sleep(0.5)
         self.ctrl_pub.publish(joy_command)
 
     def shutdown(self):

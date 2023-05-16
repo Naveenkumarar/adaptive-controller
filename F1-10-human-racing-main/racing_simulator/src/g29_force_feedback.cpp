@@ -138,6 +138,30 @@ void G29ForceFeedback::calcRotateForce(double &torque,
     }
 }
 
+void G29ForceFeedback::calcDynamicalCenteringForce(double &torque,
+                                          const g29_force_feedback::ForceFeedback &target,
+                                          const double &current_position,
+                                          double &time_gap){
+                                          
+    double diff = target.position - current_position;
+    double direction = (diff > 0.0) ? 1.0 : -1.0;  
+	
+    //double buf_torque = rotation_moment * fabs(current_position - last_position)/time_gap + wheel_resistance * current_position;
+    //torque = std::min(buf_torque, m_auto_centering_max_torque) * direction;
+	torque= (autocenter_control_p*diff)+(autocenter_control_d*(current_position - last_position))-(wheel_resistance*current_position);
+    torque = std::min(fabs(torque), m_max_torque) * direction;
+	std::cout<<"Torque:"<<torque<<std::endl;
+    // std::cout<<"CP:"<<current_position<<std::endl;
+    int position_range_minimum=-1;
+    int position_range_maximum=1;
+    int wheel_angle_maximum=450;
+    int wheel_angle_minimum=-450;
+
+    float x=(current_position-position_range_minimum)/(position_range_maximum-position_range_minimum);
+    float wheel_angle=wheel_angle_minimum+((wheel_angle_maximum-wheel_angle_minimum)*x);
+    std::cout<<"Wheel Angle:"<<wheel_angle<<std::endl;
+    last_position = current_position;
+}
 
 void G29ForceFeedback::calcCenteringForce(double &torque,
                                           const g29_force_feedback::ForceFeedback &target,
