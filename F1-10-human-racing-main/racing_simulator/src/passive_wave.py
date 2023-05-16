@@ -98,7 +98,9 @@ class racingNode(object):
             if self.command[2] < -0.5:
                 self.tval = -1.0 * self.command[1]
 
+            val = (int(self.force_feedback)+2)/2 - 1
             val =int(self.force_feedback * 32767)
+            print("Forcefeedback to device:",str(val))
             self.evtdev.write(ecodes.EV_FF, ecodes.FF_AUTOCENTER, val)
 
     def ctrl_callback(self, data):
