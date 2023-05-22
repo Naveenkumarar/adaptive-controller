@@ -11,7 +11,7 @@
       <!-- aram name="autorepeat_rate" value="10" type="double"/--> 
     </node>
 
-    <node name="racing_simulator" pkg="racing_simulator" type="passive_wave.py" output="screen">
+    <node name="racing_simulator" pkg="racing_simulator" type="passive_non_passive.py" output="screen">
     </node>
     <!--  
     <node pkg="racing_simulator"
