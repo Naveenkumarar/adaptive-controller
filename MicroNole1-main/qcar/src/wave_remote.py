@@ -32,6 +32,22 @@ from qcar.q_essential import Camera2D
 from std_msgs.msg       import Float64
 
 
+class MinimumJerk():
+    def __init__(self):
+        self.current_value = 0
+        self.current_time = 0
+        self.sampling_time = 100
+        self.next_value = 0
+
+    def update(self):
+        tau = self.current_time / (self.current_time+self.sampling_time)
+        cal = (6*tau**5) - (15*tau**4) + (10*tau**3)
+        self.next_value = self.current_value / cal
+        return self.next_value
+
+    def update_current_value(self,current_value):
+        self.current_value = current_value
+        
 class RacingNode(object):
     def __init__(self, publish_rate = 480.0):
         super().__init__()
